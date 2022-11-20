@@ -3,9 +3,18 @@ import os
 
 import torch
 import torchaudio
+import librosa
+import soundfile as sf
 
 from api import TextToSpeech, MODELS_DIR
 from utils.audio import load_voices
+
+def change_sampling_rate(filepath: str, output_sr: int) -> None:
+    speech_array, sr = librosa.load(filepath, sr=None)
+    speech_array_16k = librosa.resample(speech_array, orig_sr=sr, target_sr=output_sr)
+
+    # overwrite the sound with the target sample rate
+    sf.write(filepath, speech_array_16k, output_sr, subtype='PCM_16')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -36,13 +45,22 @@ if __name__ == '__main__':
 
         gen, dbg_state = tts.tts_with_preset(args.text, k=args.candidates, voice_samples=voice_samples, conditioning_latents=conditioning_latents,
                                   preset=args.preset, use_deterministic_seed=args.seed, return_deterministic_state=True, cvvp_amount=args.cvvp_amount)
+
+        raw_sr = 24000
+
         if isinstance(gen, list):
             for j, g in enumerate(gen):
-                torchaudio.save(os.path.join(args.output_path, f'{selected_voice}_{k}_{j}.wav'), g.squeeze(0).cpu(), 24000)
+                torchaudio.save(os.path.join(args.output_path, f'{selected_voice}_{k}_{j}.wav'), g.squeeze(0).cpu(), raw_sr)
+
+                # to change the sampling rate of the audio
+                change_sampling_rate(filepath=os.path.join(args.output_path, f'{selected_voice}_{k}_{j}.wav'), output_sr=16000)
+
         else:
-            torchaudio.save(os.path.join(args.output_path, f'{selected_voice}_{k}.wav'), gen.squeeze(0).cpu(), 24000)
+            torchaudio.save(os.path.join(args.output_path, f'{selected_voice}_{k}.wav'), gen.squeeze(0).cpu(), raw_sr)
+
+            # to change the sampling rate of the audio
+            change_sampling_rate(filepath=os.path.join(args.output_path, f'{selected_voice}_{k}_{j}.wav'), output_sr=16000)
 
         if args.produce_debug_state:
             os.makedirs('debug_states', exist_ok=True)
             torch.save(dbg_state, f'debug_states/do_tts_debug_{selected_voice}.pth')
-
