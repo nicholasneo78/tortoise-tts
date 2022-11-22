@@ -1,9 +1,11 @@
-TEXT="PERFORM A STOP MARKET ORDER FOR THREE HUNDRED LOTS"
+TEXT="BECAUSE ONE DAB IS NEVER ENOUGH"
 
 VOICE_START=1
-VOICE_END=3
-CANDIDATES=5
+VOICE_END=155
+CANDIDATES=3
 PRESET="fast"
+index=7
+OUTPUT_PATH="results${index}/"
 
 for ((c=$VOICE_START; c<=$VOICE_END; c++)) 
 do
@@ -12,5 +14,6 @@ do
         --text "${TEXT}" \
         --voice "${c}" \
         --preset "${PRESET}" \
-        --candidates "${CANDIDATES}"
+        --candidates "${CANDIDATES}" \
+        --output_path "${OUTPUT_PATH}"
 done
